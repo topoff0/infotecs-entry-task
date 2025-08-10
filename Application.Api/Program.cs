@@ -21,6 +21,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<IFileProcessingService, FileProcessingService>();
 builder.Services.AddScoped<IResultsProcessingService, ResultsProcessingService>();
+builder.Services.AddScoped<IValuesProcessingService, ValuesProcessingService>();
 
 var app = builder.Build();
 

@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Application.Core\Application.Core.csproj" />
     <ProjectReference Include="..\Application.Data\Application.Data.csproj" />
+    <ProjectReference Include="..\Application.Shared\Application.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

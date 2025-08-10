@@ -3,6 +3,7 @@ using Application.Core.Entities;
 using Application.Core.Exceptions;
 using Application.Core.Interfaces;
 using Application.Data.Data;
+using Application.Shared;
 using CsvHelper;
 using CsvHelper.Configuration;
 
@@ -46,7 +47,7 @@ namespace Application.Services.FileProcessing
                     throw new CustomValidationException($"Wrong value: ${value}");
 
 
-                if (date < new DateTime(2000, 1, 1, 0, 0, 0) || date > DateTime.UtcNow)
+                if (date < AppConstants.MinDate || date > DateTime.UtcNow)
                     throw new CustomValidationException("Date is out of range");
 
                 if (execTime < 0)

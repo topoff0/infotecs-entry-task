@@ -3,6 +3,7 @@ using Application.Core.Dtos;
 using Application.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace Application.Api.Controllers
 {
@@ -10,18 +11,21 @@ namespace Application.Api.Controllers
     [Route("api/files")]
     public class CsvFileProcessingController : ControllerBase
     {
-        private readonly IFileProcessingService _fileProcessingService;
-        private readonly IResultsProcessingService _resultsProcessingService;
-
         private readonly ILogger<CsvFileProcessingController> _logger;
 
-        public CsvFileProcessingController(IFileProcessingService fileService,
+        private readonly IFileProcessingService _fileProcessingService;
+        private readonly IResultsProcessingService _resultsProcessingService;
+        private readonly IValuesProcessingService _valueProcessingService;
+
+        public CsvFileProcessingController(ILogger<CsvFileProcessingController> logger,
+                                           IFileProcessingService fileService,
                                            IResultsProcessingService resultsProcessingService,
-                                           ILogger<CsvFileProcessingController> logger)
+                                           IValuesProcessingService valueProcessingService)
         {
+            _logger = logger;
             _fileProcessingService = fileService;
             _resultsProcessingService = resultsProcessingService;
-            _logger = logger;
+            _valueProcessingService = valueProcessingService;
         }
 
         [HttpGet("health")]
@@ -50,6 +54,18 @@ namespace Application.Api.Controllers
 
             var list = await query.ToListAsync();
             return Ok(list);
+        }
+
+        [HttpGet("last-values")]
+        public async Task<IActionResult> GetLastValues([FromQuery] LastValuesDto request)
+        {
+            if (request.FileName is null)
+                return BadRequest("Incorrect filename");
+
+            var query = _valueProcessingService.GetLastSortedValues(request.FileName);
+            var result = await query.ToListAsync();
+
+            return Ok(result);
         }
     }
 }

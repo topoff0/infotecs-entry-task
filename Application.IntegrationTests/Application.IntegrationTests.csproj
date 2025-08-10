@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Application.Shared\Application.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
