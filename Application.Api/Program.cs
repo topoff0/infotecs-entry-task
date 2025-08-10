@@ -1,6 +1,7 @@
 using Application.Api.Extensions;
 using Application.Core.Interfaces;
 using Application.Data.Extensions;
+using Application.Services.DataProcessing;
 using Application.Services.FileProcessing;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 builder.Services.AddScoped<IFileProcessingService, FileProcessingService>();
+builder.Services.AddScoped<IResultsProcessingService, ResultsProcessingService>();
 
 var app = builder.Build();
 

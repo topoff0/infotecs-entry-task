@@ -1,6 +1,8 @@
 using Application.Api.Dtos;
+using Application.Core.Dtos;
 using Application.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Application.Api.Controllers
 {
@@ -9,18 +11,23 @@ namespace Application.Api.Controllers
     public class CsvFileProcessingController : ControllerBase
     {
         private readonly IFileProcessingService _fileProcessingService;
+        private readonly IResultsProcessingService _resultsProcessingService;
+
         private readonly ILogger<CsvFileProcessingController> _logger;
 
-        public CsvFileProcessingController(IFileProcessingService fileService, ILogger<CsvFileProcessingController> logger)
+        public CsvFileProcessingController(IFileProcessingService fileService,
+                                           IResultsProcessingService resultsProcessingService,
+                                           ILogger<CsvFileProcessingController> logger)
         {
             _fileProcessingService = fileService;
+            _resultsProcessingService = resultsProcessingService;
             _logger = logger;
         }
 
         [HttpGet("health")]
         public IActionResult Health()
         {
-            return Ok(new { status = "Health", timestamp = DateTime.UtcNow});
+            return Ok(new { status = "Health", timestamp = DateTime.UtcNow });
         }
 
 
@@ -34,6 +41,15 @@ namespace Application.Api.Controllers
             await _fileProcessingService.ProcessCsvAsync(request.File.FileName, stream);
 
             return Ok("Successful upload");
+        }
+
+        [HttpGet("results")]
+        public async Task<IActionResult> GetResults([FromQuery] ResultsFilters filters)
+        {
+            var query = _resultsProcessingService.GetFilteredResult(filters);
+
+            var list = await query.ToListAsync();
+            return Ok(list);
         }
     }
 }
