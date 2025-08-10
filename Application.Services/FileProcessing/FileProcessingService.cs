@@ -77,6 +77,9 @@ namespace Application.Services.FileProcessing
 
             await _db.SaveChangesAsync();
 
+            _db.Metrics.AddRange(records);
+            await _db.SaveChangesAsync();
+
             var minDate = records.Min(r => r.DateStart);
             var maxDate = records.Max(r => r.DateStart);
             var deltaSeconds = (maxDate - minDate).TotalSeconds;
