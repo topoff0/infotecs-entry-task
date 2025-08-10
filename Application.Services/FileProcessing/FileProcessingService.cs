@@ -1,11 +1,12 @@
 using System.Globalization;
 using Application.Core.Entities;
+using Application.Core.Exceptions;
 using Application.Core.Interfaces;
 using Application.Data.Data;
 using CsvHelper;
 using CsvHelper.Configuration;
 
-namespace Application.Services
+namespace Application.Services.FileProcessing
 {
     public class FileProcessingService : IFileProcessingService
     {
@@ -30,29 +31,29 @@ namespace Application.Services
             while (await csv.ReadAsync())
             {
                 if (csv.Parser.Record?.Length != 3)
-                    throw new InvalidOperationException("Wrong .csv file format");
+                    throw new Core.Exceptions.CustomValidationException("Wrong .csv file format");
 
                 var field = csv.GetField(0);
                 if (!DateTime.TryParse(csv.GetField(0), out var date))
-                    throw new InvalidOperationException($"Wrong date format: {date}");
+                    throw new CustomValidationException($"Wrong date format: {date}");
 
                 if (!double.TryParse(csv.GetField(1),
                     NumberStyles.Float, CultureInfo.InvariantCulture, out var execTime))
-                    throw new InvalidOperationException($"Wrong execution time: ${execTime}");
+                    throw new CustomValidationException($"Wrong execution time: ${execTime}");
 
                 if (!double.TryParse(csv.GetField(2),
                     NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
-                    throw new InvalidOperationException($"Wrong value: ${value}");
+                    throw new CustomValidationException($"Wrong value: ${value}");
 
 
                 if (date < new DateTime(2000, 1, 1, 0, 0, 0) || date > DateTime.UtcNow)
-                    throw new InvalidOperationException("Date is out of range");
+                    throw new CustomValidationException("Date is out of range");
 
                 if (execTime < 0)
-                    throw new InvalidOperationException("Execution time must be positive");
+                    throw new CustomValidationException("Execution time must be positive");
 
                 if (value < 0)
-                    throw new InvalidOperationException("Value must be positive");
+                    throw new CustomValidationException("Value must be positive");
 
                 records.Add(new Metric
                 {
@@ -64,7 +65,7 @@ namespace Application.Services
             }
 
             if (records.Count < 1 || records.Count > 10_000)
-                throw new InvalidOperationException("Records count is out of range");
+                throw new CustomValidationException("Records count is out of range");
 
             await using var transaction = await _db.Database.BeginTransactionAsync();
 

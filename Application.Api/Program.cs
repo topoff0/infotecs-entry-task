@@ -1,6 +1,7 @@
+using Application.Api.Extensions;
 using Application.Core.Interfaces;
 using Application.Data.Extensions;
-using Application.Services;
+using Application.Services.FileProcessing;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,8 @@ if (app.Environment.IsDevelopment())
 }
 
 await MigrationsHelper.ApplyMigrationsAsync(app.Services);
+
+app.UseExceptionHandling();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
