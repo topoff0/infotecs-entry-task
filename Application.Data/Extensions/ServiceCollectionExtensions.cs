@@ -28,6 +28,9 @@ namespace Application.Data.Extensions
                 options.UseNpgsql(connectionString);
             });
 
+            services.AddHealthChecks()
+                .AddDbContextCheck<ApplicationDbContext>();
+
             return services;
         }
     }

@@ -1,3 +1,4 @@
+using Application.Api.Dtos;
 using Application.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,16 +17,23 @@ namespace Application.Api.Controllers
             _logger = logger;
         }
 
+        [HttpGet("health")]
+        public IActionResult Health()
+        {
+            return Ok(new { status = "Health", timestamp = DateTime.UtcNow});
+        }
+
+
         [HttpPost("upload")]
-        public async Task<IActionResult> Upload([FromForm] IFormFile file)
+        public async Task<IActionResult> Upload([FromForm] CsvFileRequest request)
         {
             try
             {
-                if (file is null || file.Length == 0)
+                if (request.File is null || request.File.Length == 0)
                     return BadRequest("File wasn't uploaded or is empty");
 
-                using var stream = file.OpenReadStream();
-                await _fileProcessingService.ProcessCsvAsync(file.FileName, stream);
+                using var stream = request.File.OpenReadStream();
+                await _fileProcessingService.ProcessCsvAsync(request.File.FileName, stream);
 
                 return Ok("Successful upload");
             }

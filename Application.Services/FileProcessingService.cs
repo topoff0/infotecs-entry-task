@@ -32,6 +32,7 @@ namespace Application.Services
                 if (csv.Parser.Record?.Length != 3)
                     throw new InvalidOperationException("Wrong .csv file format");
 
+                var field = csv.GetField(0);
                 if (!DateTime.TryParse(csv.GetField(0), out var date))
                     throw new InvalidOperationException($"Wrong date format: {date}");
 
@@ -53,10 +54,10 @@ namespace Application.Services
                 if (value < 0)
                     throw new InvalidOperationException("Value must be positive");
 
-                records.AddRange(new Metric
+                records.Add(new Metric
                 {
                     FileName = fileName,
-                    DateStart = date,
+                    DateStart = DateTime.SpecifyKind(date, DateTimeKind.Local).ToUniversalTime(),
                     ExecutionTime = execTime,
                     Value = value
                 });
