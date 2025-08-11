@@ -10,11 +10,10 @@ namespace Application.Api.Controllers
     [Route("api/files")]
     public class CsvFileProcessingController : ControllerBase
     {
+        private readonly IFileProcessingService _fileProcessingService;
+        
         private readonly IResultService _resultService;
         private readonly IMetricService _metricService;
-
-        private readonly IFileProcessingService _fileProcessingService;
-
 
         public CsvFileProcessingController(IFileProcessingService fileService,
                                            IResultService resultService,
