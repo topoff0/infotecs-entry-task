@@ -1,9 +1,8 @@
 using Application.Api.Dtos;
 using Application.Core.Dtos;
-using Application.Core.Interfaces;
+using Application.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace Application.Api.Controllers
 {
@@ -11,21 +10,19 @@ namespace Application.Api.Controllers
     [Route("api/files")]
     public class CsvFileProcessingController : ControllerBase
     {
-        private readonly ILogger<CsvFileProcessingController> _logger;
+        private readonly IResultService _resultService;
+        private readonly IMetricService _metricService;
 
         private readonly IFileProcessingService _fileProcessingService;
-        private readonly IResultsProcessingService _resultsProcessingService;
-        private readonly IValuesProcessingService _valueProcessingService;
 
-        public CsvFileProcessingController(ILogger<CsvFileProcessingController> logger,
-                                           IFileProcessingService fileService,
-                                           IResultsProcessingService resultsProcessingService,
-                                           IValuesProcessingService valueProcessingService)
+
+        public CsvFileProcessingController(IFileProcessingService fileService,
+                                           IResultService resultService,
+                                           IMetricService metricService)
         {
-            _logger = logger;
             _fileProcessingService = fileService;
-            _resultsProcessingService = resultsProcessingService;
-            _valueProcessingService = valueProcessingService;
+            _resultService = resultService;
+            _metricService = metricService;
         }
 
         [HttpGet("health")]
@@ -50,7 +47,7 @@ namespace Application.Api.Controllers
         [HttpGet("results")]
         public async Task<IActionResult> GetResults([FromQuery] ResultsFilters filters)
         {
-            var query = _resultsProcessingService.GetFilteredResult(filters);
+            var query = _resultService.GetFiltered(filters);
 
             var list = await query.ToListAsync();
             return Ok(list);
@@ -62,7 +59,7 @@ namespace Application.Api.Controllers
             if (request.FileName is null)
                 return BadRequest("Incorrect filename");
 
-            var query = _valueProcessingService.GetLastSortedValues(request.FileName);
+            var query = _metricService.GetLastSorted(request.FileName);
             var result = await query.ToListAsync();
 
             return Ok(result);

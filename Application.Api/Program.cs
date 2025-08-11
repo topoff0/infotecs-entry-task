@@ -1,8 +1,16 @@
 using Application.Api.Extensions;
-using Application.Core.Interfaces;
+using Application.Core.Interfaces.Calculations;
+using Application.Core.Interfaces.Data;
+using Application.Core.Interfaces.Parsers;
+using Application.Core.Interfaces.Services;
+using Application.Core.Interfaces.Validations;
 using Application.Data.Extensions;
+using Application.Data.Repositories;
+using Application.Services.Calculations;
 using Application.Services.DataProcessing;
 using Application.Services.FileProcessing;
+using Application.Services.Parsers;
+using Application.Services.Validations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,9 +27,16 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+builder.Services.AddScoped<IMetricRepository, MetricRepository>();
+builder.Services.AddScoped<IResultRepository, ResultRepository>();
 builder.Services.AddScoped<IFileProcessingService, FileProcessingService>();
-builder.Services.AddScoped<IResultsProcessingService, ResultsProcessingService>();
-builder.Services.AddScoped<IValuesProcessingService, ValuesProcessingService>();
+builder.Services.AddScoped<IResultService, ResultService>();
+builder.Services.AddScoped<IMetricService, MetricService>();
+
+builder.Services.AddSingleton<IMetricCalculator, MetricCalculator>();
+builder.Services.AddSingleton<ICsvMetricsParser, CsvMetricsParser>();
+builder.Services.AddSingleton<IMetricValidator, MetricValidator>();
+builder.Services.AddSingleton<IResultValidator, ResultValidator>();
 
 var app = builder.Build();
 

@@ -1,4 +1,4 @@
-namespace Application.Core.Interfaces
+namespace Application.Core.Interfaces.Services
 {
     public interface IFileProcessingService
     {

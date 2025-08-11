@@ -1,72 +1,27 @@
-using System.Globalization;
 using Application.Core.Entities;
-using Application.Core.Exceptions;
-using Application.Core.Interfaces;
+using Application.Core.Interfaces.Calculations;
+using Application.Core.Interfaces.Parsers;
+using Application.Core.Interfaces.Services;
 using Application.Data.Data;
-using Application.Shared;
-using CsvHelper;
-using CsvHelper.Configuration;
 
 namespace Application.Services.FileProcessing
 {
     public class FileProcessingService : IFileProcessingService
     {
         private readonly ApplicationDbContext _db;
+        private readonly ICsvMetricsParser _csvMetricsParser;
+        private readonly IMetricCalculator _metricCalculator;
 
-        public FileProcessingService(ApplicationDbContext dbContext)
+        public FileProcessingService(ApplicationDbContext dbContext, IMetricCalculator metricCalculator, ICsvMetricsParser csvMetricsParser)
         {
             _db = dbContext;
+            _csvMetricsParser = csvMetricsParser;
+            _metricCalculator = metricCalculator;
         }
 
         public async Task ProcessCsvAsync(string fileName, Stream csvStream)
         {
-            using var reader = new StreamReader(csvStream);
-            using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
-            {
-                Delimiter = ";",
-                HasHeaderRecord = true
-            });
-
-            var records = new List<Metric>();
-
-            while (await csv.ReadAsync())
-            {
-                if (csv.Parser.Record?.Length != 3)
-                    throw new Core.Exceptions.CustomValidationException("Wrong .csv file format");
-
-                var field = csv.GetField(0);
-                if (!DateTime.TryParse(csv.GetField(0), out var date))
-                    throw new CustomValidationException($"Wrong date format: {date}");
-
-                if (!double.TryParse(csv.GetField(1),
-                    NumberStyles.Float, CultureInfo.InvariantCulture, out var execTime))
-                    throw new CustomValidationException($"Wrong execution time: ${execTime}");
-
-                if (!double.TryParse(csv.GetField(2),
-                    NumberStyles.Float, CultureInfo.InvariantCulture, out var value))
-                    throw new CustomValidationException($"Wrong value: ${value}");
-
-
-                if (date < AppConstants.MinDate || date > DateTime.UtcNow)
-                    throw new CustomValidationException("Date is out of range");
-
-                if (execTime < 0)
-                    throw new CustomValidationException("Execution time must be positive");
-
-                if (value < 0)
-                    throw new CustomValidationException("Value must be positive");
-
-                records.Add(new Metric
-                {
-                    FileName = fileName,
-                    DateStart = DateTime.SpecifyKind(date, DateTimeKind.Local).ToUniversalTime(),
-                    ExecutionTime = execTime,
-                    Value = value
-                });
-            }
-
-            if (records.Count < 1 || records.Count > 10_000)
-                throw new CustomValidationException("Records count is out of range");
+            var metrics = await _csvMetricsParser.ParseAsync(fileName, csvStream);
 
             await using var transaction = await _db.Database.BeginTransactionAsync();
 
@@ -78,34 +33,12 @@ namespace Application.Services.FileProcessing
 
             await _db.SaveChangesAsync();
 
-            _db.Metrics.AddRange(records);
+            _db.Metrics.AddRange(metrics);
             await _db.SaveChangesAsync();
 
-            var minDate = records.Min(r => r.DateStart);
-            var maxDate = records.Max(r => r.DateStart);
-            var deltaSeconds = (maxDate - minDate).TotalSeconds;
-            var avgExecutionTime = records.Average(r => r.ExecutionTime);
-            var avgValue = records.Average(r => r.Value);
-            var sortedValues = records.OrderBy(r => r.Value).ToList();
-            var medianValue = sortedValues.Count % 2 == 0
-                ? (sortedValues[sortedValues.Count / 2 - 1].Value + sortedValues[sortedValues.Count / 2].Value) / 2.0
-                : sortedValues[sortedValues.Count / 2].Value;
-            var maxValue = sortedValues[^1].Value;
-            var minValue = sortedValues[0].Value;
+            var result = _metricCalculator.Calculate(fileName, metrics);
 
-            var resultEntity = new Result
-            {
-                FileName = fileName,
-                MinDate = minDate,
-                TimeDeltaSeconds = deltaSeconds,
-                AvgExecutionTime = avgExecutionTime,
-                AvgValue = avgValue,
-                MedianValue = medianValue,
-                MaxValue = maxValue,
-                MinValue = minValue
-            };
-
-            await _db.Results.AddAsync(resultEntity);
+            await _db.Results.AddAsync(result);
             await _db.SaveChangesAsync();
 
             await _db.Database.CommitTransactionAsync();
