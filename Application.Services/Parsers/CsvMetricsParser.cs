@@ -3,7 +3,6 @@ using Application.Core.Entities;
 using Application.Core.Exceptions;
 using Application.Core.Interfaces.Parsers;
 using Application.Core.Interfaces.Validations;
-using Application.Services.Validations;
 using CsvHelper;
 using CsvHelper.Configuration;
 
